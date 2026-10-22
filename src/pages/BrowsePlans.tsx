@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ApiError } from "../api/client";
 import WalletConnectModal from "../components/WalletConnectModal";
+import { useWallet } from "../wallet/WalletContext";
+import { FreighterConnectionError } from "../wallet/freighter";
 import ErrorState from "../components/ErrorState";
 import SortBySelect from "../components/SortBySelect";
 import GiftPurchaseModal, { type Plan as GiftPlan } from "../components/GiftPurchaseModal";
@@ -378,10 +380,16 @@ export default function BrowsePlans() {
 	const [intervalFilter, setIntervalFilter] = useState<PlanInterval | "All">("All");
 	const [sortField, setSortField] = useState<SortField>("name");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-	const [isWalletConnected, setIsWalletConnected] = useState(false);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [giftModalOpen, setGiftModalOpen] = useState(false);
 	const [selectedPlanForGift, setSelectedPlanForGift] = useState<Plan | null>(null);
+	const {
+		status,
+		error: walletError,
+		connect,
+		clearError,
+		cancelConnect,
+	} = useWallet();
 
 	// Fetch plans from API
 	const fetchPlans = useCallback(async () => {
@@ -441,7 +449,7 @@ export default function BrowsePlans() {
 	}, [plans, searchQuery, intervalFilter, sortField, sortDirection]);
 
 	const handleSubscribe = (plan: Plan) => {
-		if (!isWalletConnected) {
+		if (status !== "connected") {
 			setWalletModalOpen(true);
 			return;
 		}
